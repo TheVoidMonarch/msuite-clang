@@ -195,6 +195,7 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
             int minutes = (int)((diff_sec - hours * 3600) / 60);
             int seconds = (int)(diff_sec - hours * 3600 - minutes * 60);
 
+            // Fixed position for Next Prayer line (not centered)
             snprintf(buffer, sizeof(buffer), "Next Prayer : %s ( %02d:%02d:%02d left )",
                      next_prayer_name, hours, minutes, seconds);
             render_text(renderer, nextFont, buffer, 170, 75, textColor);
