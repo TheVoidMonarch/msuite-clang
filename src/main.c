@@ -30,12 +30,12 @@ void displayMainMenu() {
     printf("%s  Group A7X: Haziq, Imran, Zuan%s\n\n", YELLOW, RESET);
 
     // Menu options with different colors
-    printf("%s1.%s View Prayer Times (Console)\n", GREEN, RESET);
-    printf("%s2.%s View Prayer Times (Graphical - Local Only)\n", GREEN, RESET);
-    printf("%s3.%s Test Azan\n", GREEN, RESET);
-    printf("%s4.%s Admin Settings\n", GREEN, RESET);
-    printf("%s5.%s SysLog\n", GREEN, RESET);
-    printf("%s6.%s Exit\n", RED, RESET);
+    printf("%s1.%s View Prayer Times (Console)\n", RESET, CYAN);
+    printf("%s2.%s View Prayer Times (Graphical - Local Only)\n", RESET, YELLOW);
+    printf("%s3.%s Test Azan\n", RESET, BLUE);
+    printf("%s4.%s Admin Settings\n", RESET, GREEN);
+    printf("%s5.%s SysLog\n", RESET, MAGENTA);
+    printf("%s6.%s Exit\n", RESET, RED);
 
     printf("%sEnter your choice: %s", BOLD, RESET);
 }
