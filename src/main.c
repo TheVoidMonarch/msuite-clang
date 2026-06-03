@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h> // Required for SDL_Delay
 
 #include "sdl_handler.h"
+#include "logger.h"
 
 // Forward declaration for graphical display (for user's local implementation)
 void displayGraphicalPrayerTimesLocal(PrayerTimes pt);
@@ -15,8 +16,25 @@ void displayMainMenu() {
     printf("2. View Prayer Times (Graphical - Local Only)\n");
     printf("3. Test Azan\n");
     printf("4. Admin Settings\n");
-    printf("5. Exit\n");
+    printf("5. SysLog\n");
+    printf("6. Exit\n");
     printf("Enter your choice: ");
+}
+
+void displaySysLog() {
+    FILE* file = fopen("syslog.txt", "r");
+    if (file == NULL) {
+        printf("No log file found.\n");
+        return;
+    }
+
+    printf("\n--- System Log ---\n");
+    char line[512];
+    while (fgets(line, sizeof(line), file)) {
+        printf("%s", line);
+    }
+    printf("--- End of Log ---\n");
+    fclose(file);
 }
 
 void displayAdminMenu() {
@@ -33,14 +51,20 @@ int main() {
     int adminChoice;
     char input_buffer[10]; // Buffer for user input
 
+    log_message("USAGE", "Program started");
+
     do {
         displayMainMenu();
         if (fgets(input_buffer, sizeof(input_buffer), stdin) != NULL) {
             // Remove trailing newline character if present
             input_buffer[strcspn(input_buffer, "\n")] = 0;
             choice = atoi(input_buffer);
+            char log_buf[256];
+            snprintf(log_buf, sizeof(log_buf), "User selected main menu option: %d", choice);
+            log_message("USAGE", log_buf);
         } else {
             choice = 0; // Invalid input
+            log_message("WARNING", "Failed to read main menu choice or EOF reached");
         }
 
         switch (choice) {
@@ -114,16 +138,25 @@ int main() {
                             break;
                         default:
                             printf("Invalid choice. Please try again.\n");
+                            log_message("WARNING", "Invalid admin menu choice entered");
                     }
+                    char log_buf[256];
+                    snprintf(log_buf, sizeof(log_buf), "User selected admin menu option: %d", adminChoice);
+                    log_message("USAGE", log_buf);
                 } while (adminChoice != 4);
                 break;
             case 5:
+                displaySysLog();
+                break;
+            case 6:
                 printf("Exiting MasjidSuite. Goodbye!\n");
+                log_message("USAGE", "Program exited by user");
                 break;
             default:
                 printf("Invalid choice. Please try again.\n");
+                log_message("WARNING", "Invalid main menu choice entered");
         }
-    } while (choice != 5);
+    } while (choice != 6);
 
     return 0;
 }

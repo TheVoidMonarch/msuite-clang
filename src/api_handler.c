@@ -5,6 +5,7 @@
 #include "cJSON.h"
 #include <time.h>
 #include "api_handler.h"
+#include "logger.h"
 
 // Structure to hold the API response
 struct MemoryStruct {
@@ -65,6 +66,10 @@ PrayerTimes fetch_prayer_times(const char *city, const char *country, int method
 
     snprintf(url, sizeof(url), "https://api.aladhan.com/v1/timingsByCity/%02d-%02d-%d?city=%s&country=%s&method=%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, encoded_city, encoded_country, method);
 
+    char log_buf[512];
+    snprintf(log_buf, sizeof(log_buf), "Requesting prayer times: %s", url);
+    log_message("REQUEST", log_buf);
+
     curl_free(encoded_city);
     curl_free(encoded_country);
 
@@ -86,7 +91,10 @@ PrayerTimes fetch_prayer_times(const char *city, const char *country, int method
 
     /* check for errors */
     if (res != CURLE_OK) {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
     } else {
         /*
          * Now, parse the JSON response using cJSON

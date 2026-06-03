@@ -3,22 +3,33 @@
 #include <string.h>
 #include <time.h> // For time functions
 #include <stdlib.h> // For atoi
+#include "logger.h"
 
 SDL_Window* init_sdl_video(int width, int height) {
+    log_message("INFO", "Initializing SDL video...");
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        fprintf(stderr, "SDL Video could not initialize! SDL_Error: %s\n", SDL_GetError());
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "SDL Video could not initialize! SDL_Error: %s", SDL_GetError());
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
         return NULL;
     }
 
     SDL_Window* window = SDL_CreateWindow("MasjidSuite - Prayer Times", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
     if (window == NULL) {
-        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "Window could not be created! SDL_Error: %s", SDL_GetError());
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
         SDL_Quit();
         return NULL;
     }
 
     if (TTF_Init() == -1) {
-        fprintf(stderr, "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "SDL_ttf could not initialize! SDL_ttf Error: %s", TTF_GetError());
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return NULL;
@@ -27,13 +38,20 @@ SDL_Window* init_sdl_video(int width, int height) {
 }
 
 int init_sdl_audio() {
+    log_message("INFO", "Initializing SDL audio...");
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-        fprintf(stderr, "SDL Audio could not initialize! SDL_Error: %s\n", SDL_GetError());
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "SDL Audio could not initialize! SDL_Error: %s", SDL_GetError());
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
         return 0;
     }
     // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        fprintf(stderr, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "SDL_mixer could not initialize! SDL_mixer Error: %s", Mix_GetError());
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
         SDL_Quit();
         return 0;
     }
@@ -70,12 +88,19 @@ void render_text(SDL_Renderer* renderer, TTF_Font* font, const char* text, int x
 
 void play_azan(const char* audio_path) {
     static Mix_Music* current_azan = NULL;
+    char log_buf[256];
+    snprintf(log_buf, sizeof(log_buf), "Playing Azan: %s", audio_path);
+    log_message("INFO", log_buf);
+
     if (current_azan != NULL) {
         Mix_FreeMusic(current_azan);
     }
     current_azan = Mix_LoadMUS(audio_path);
     if (current_azan == NULL) {
-        fprintf(stderr, "Failed to load azan music (%s)! SDL_mixer Error: %s\n", audio_path, Mix_GetError());
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "Failed to load azan music (%s)! SDL_mixer Error: %s", audio_path, Mix_GetError());
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
         return;
     }
     Mix_PlayMusic(current_azan, 1);
