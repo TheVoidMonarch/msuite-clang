@@ -2,23 +2,44 @@
 #include <stdlib.h>
 #include <string.h>
 #include "api_handler.h"
-#include <SDL2/SDL.h> // Required for SDL_Delay
-
+#include <SDL2/SDL.h>
 #include "sdl_handler.h"
 #include "logger.h"
 
-// Forward declaration for graphical display (for user's local implementation)
+// ANSI escape codes for colors
+#define RED     "\033[0;31m"
+#define GREEN   "\033[0;32m"
+#define YELLOW  "\033[1;33m"
+#define BLUE    "\033[1;34m"
+#define CYAN    "\033[1;36m"
+#define MAGENTA "\033[1;35m"
+#define BOLD    "\033[1m"
+#define RESET   "\033[0m"
+
+// Forward declaration
 void displayGraphicalPrayerTimesLocal(PrayerTimes pt);
 
 void displayMainMenu() {
-    printf("\nMasjidSuite Main Menu\n");
-    printf("1. View Prayer Times (Console)\n");
-    printf("2. View Prayer Times (Graphical - Local Only)\n");
-    printf("3. Test Azan\n");
-    printf("4. Admin Settings\n");
-    printf("5. SysLog\n");
-    printf("6. Exit\n");
-    printf("Enter your choice: ");
+    // Title in bold cyan, larger spacing
+    printf("\n%s%s==============================%s\n", BOLD, CYAN, RESET);
+    printf("%s%s     MASJIDSUITE MAIN MENU        %s\n", BOLD, CYAN, RESET);
+    printf("%s%s==============================%s\n", BOLD, CYAN, RESET);
+
+    // Subtitle in yellow, slightly smaller
+    printf("%s-Basics of Programming Mini Project-%s\n", YELLOW, RESET);
+    printf("%s  Group A7X: Haziq, Imran, Zuan%s\n\n", YELLOW, RESET);
+
+    // Menu options with different colors
+    printf("%s1.%s View Prayer Times (Console)\n", GREEN, RESET);
+    printf("%s2.%s View Prayer Times (Graphical - Local Only)\n", GREEN, RESET);
+    printf("%s3.%s Test Azan\n", GREEN, RESET);
+    printf("%s4.%s Admin Settings\n", GREEN, RESET);
+    printf("%s5.%s SysLog\n", GREEN, RESET);
+    printf("%s6.%s Exit\n", RED, RESET);
+
+    printf("%sEnter your choice: %s", BOLD, RESET);
+}
+
 }
 
 void displaySysLog() {
@@ -91,12 +112,12 @@ int main() {
                 
                 if (init_sdl_audio()) {
                     printf("initializing playback...\n");
-                    // In a real scenario, we wouldn't block the main thread like this,
+                   
                     // but for a simple test, we use SDL_Delay.
                     SDL_Delay(500); 
                     
                     printf("Playing Azan...\n");
-                    // For test, we play the standard Adhan. You could add logic to choose Fajr.
+                   
                     play_azan("assets/Adhan.mp3");
                     
                     // Wait for the audio to finish playing
