@@ -29,13 +29,14 @@ if ! sudo apt-get install -y \
     libsdl2-dev \
     libsdl2-ttf-dev \
     libsdl2-mixer-dev \
+    libsdl2-image-dev \
     build-essential; then
     echo -e "${RED}ERROR:${NC} Failed to install dependencies. Exiting."
     exit 1
 fi
 
 echo "Checking dependencies..."
-for pkg in libcurl4-openssl-dev libcjson-dev libsdl2-dev libsdl2-ttf-dev libsdl2-mixer-dev build-essential; do
+for pkg in libcurl4-openssl-dev libcjson-dev libsdl2-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-image-dev build-essential; do
     if ! dpkg -s "$pkg" &> /dev/null; then
         echo -e "${RED}ERROR:${NC} Missing dependency: $pkg"
         exit 1
@@ -56,6 +57,7 @@ if ! gcc -o masjidsuite \
     -lSDL2 \
     -lSDL2_ttf \
     -lSDL2_mixer \
+    -lSDL2_image \
     -I/usr/include/cjson; then
     echo -e "${RED}ERROR:${NC} Compilation failed. Exiting."
     exit 1
