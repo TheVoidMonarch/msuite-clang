@@ -47,20 +47,13 @@ To compile and run the MasjidSuite project on your local Linux system (or Window
 
 1.  **Extract the Project Files**: Unzip the provided `MasjidSuite.zip` file to your desired directory.
 
-2.  **Install Dependencies**: Open your terminal and install the necessary development libraries. These commands are for Debian/Ubuntu-based systems:
+2.  **Install Dependencies and Compile the Project**: Open your terminal and install the necessary development libraries. These commands are for Debian/Ubuntu-based systems:
 
     ```bash
-    sudo apt-get update
-    sudo apt-get install -y libcurl4-openssl-dev libcjson-dev libsdl2-dev libsdl2-ttf-dev libsdl2-mixer-dev build-essential
+   chmod +x INSTALL.sh
     ```
 
-3.  **Compile the Project**: Navigate to the project's root directory (where `src/` and `assets/` are located) and compile the source files using `gcc`. Ensure all `.c` files are included and the libraries are linked correctly, specifying the `src` directory for includes:
-
-    ```bash
-    gcc -o masjidsuite src/main.c src/api_handler.c src/sdl_handler.c src/logger.c -Isrc -lcurl -lcjson -lSDL2 -lSDL2_ttf -lSDL2_mixer -I/usr/include/cjson
-    ```
-
-4.  **Run the Program**: Execute the compiled program from the project's root directory:
+3.  **Run the Program**: Execute the compiled program from the project's root directory:
 
     ```bash
     ./masjidsuite
