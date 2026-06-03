@@ -18,7 +18,6 @@ static int parse_time_string(const char* time_str, struct tm* tm_out) {
 }
 
 SDL_Window* init_sdl_video(int width, int height) {
-    log_message("INFO", "Initializing SDL video...");
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL Video could not initialize! SDL_Error: %s\n", SDL_GetError());
         return NULL;
@@ -54,7 +53,6 @@ SDL_Window* init_sdl_video(int width, int height) {
 }
 
 int init_sdl_audio() {
-    log_message("INFO", "Initializing SDL audio...");
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         fprintf(stderr, "SDL Audio could not initialize! SDL_Error: %s\n", SDL_GetError());
         return 0;
@@ -73,7 +71,6 @@ void quit_sdl_audio() {
 }
 
 void stop_azan() {
-    log_message("INFO", "Stopping Azan playback...");
     Mix_HaltMusic();
 }
 
@@ -118,14 +115,17 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
         return;
     }
 
-    TTF_Font* font = TTF_OpenFont("assets/YourFont.ttf", 28); // use your chosen font
-    if (!font) {
+    // Load custom fonts
+    TTF_Font* nextFont = TTF_OpenFont("assets/Basmala.ttf", 32); // for Next Prayer
+    TTF_Font* listFont = TTF_OpenFont("assets/Astaga.ttf", 24);  // for prayer list
+    if (!nextFont || !listFont) {
+        fprintf(stderr, "Failed to load custom fonts!\n");
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         return;
     }
 
-    SDL_Color textColor = {0, 0, 0, 255}; // black text
+    SDL_Color textColor = {0, 0, 0, 255};
     char buffer[128];
 
     const char* labels[] = {"Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"};
@@ -140,8 +140,9 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
             }
         }
 
-        // Clear and redraw background
         SDL_RenderClear(renderer);
+
+        // Draw border background
         SDL_Surface* borderSurface = IMG_Load("assets/border.xpm");
         if (borderSurface) {
             SDL_Texture* borderTexture = SDL_CreateTextureFromSurface(renderer, borderSurface);
@@ -191,7 +192,7 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
 
             snprintf(buffer, sizeof(buffer), "Next Prayer : %s ( %02d:%02d:%02d left )",
                      next_prayer_name, hours, minutes, seconds);
-            render_text(renderer, font, buffer, 200, 50, textColor);
+            render_text(renderer, nextFont, buffer, 200, 50, textColor);
         }
 
         // Draw prayer times shifted right
@@ -201,14 +202,15 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
 
         for (int i = 0; i < 6; i++) {
             snprintf(buffer, sizeof(buffer), "%-8s\t%s", labels[i], values[i]);
-            render_text(renderer, font, buffer, startX, startY + i * spacing, textColor);
+            render_text(renderer, listFont, buffer, startX, startY + i * spacing, textColor);
         }
 
         SDL_RenderPresent(renderer);
         SDL_Delay(1000); // update every second
     }
 
-    TTF_CloseFont(font);
+    TTF_CloseFont(nextFont);
+    TTF_CloseFont(listFont);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
