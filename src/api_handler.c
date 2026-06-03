@@ -33,6 +33,42 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
     return realsize;
 }
 
+int get_location_by_ip(double *lat, double *lon) {
+    CURL *curl_handle;
+    CURLcode res;
+    struct MemoryStruct chunk;
+    chunk.memory = malloc(1);
+    chunk.size = 0;
+
+    curl_handle = curl_easy_init();
+    curl_easy_setopt(curl_handle, CURLOPT_URL, "http://ip-api.com/json/");
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+    res = curl_easy_perform(curl_handle);
+    int success = 0;
+    if (res == CURLE_OK) {
+        cJSON *json = cJSON_Parse(chunk.memory);
+        if (json != NULL) {
+            cJSON *status = cJSON_GetObjectItemCaseSensitive(json, "status");
+            if (cJSON_IsString(status) && (strcmp(status->valuestring, "success") == 0)) {
+                cJSON *lat_item = cJSON_GetObjectItemCaseSensitive(json, "lat");
+                cJSON *lon_item = cJSON_GetObjectItemCaseSensitive(json, "lon");
+                if (cJSON_IsNumber(lat_item) && cJSON_IsNumber(lon_item)) {
+                    *lat = lat_item->valuedouble;
+                    *lon = lon_item->valuedouble;
+                    success = 1;
+                }
+            }
+            cJSON_Delete(json);
+        }
+    }
+    curl_easy_cleanup(curl_handle);
+    free(chunk.memory);
+    return success;
+}
+
 PrayerTimes fetch_prayer_times(const char *city, const char *country, int method) {
     CURL *curl_handle;
     CURLcode res;
@@ -49,29 +85,41 @@ PrayerTimes fetch_prayer_times(const char *city, const char *country, int method
     curl_handle = curl_easy_init();
 
     /* specify URL to get */
-    char url[256];
+    char url[512];
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
 
-    char *encoded_city = curl_easy_escape(curl_handle, city, 0);
-    char *encoded_country = curl_easy_escape(curl_handle, country, 0);
+    if (city != NULL && country != NULL) {
+        char *encoded_city = curl_easy_escape(curl_handle, city, 0);
+        char *encoded_country = curl_easy_escape(curl_handle, country, 0);
 
-    if (!encoded_city || !encoded_country) {
-        fprintf(stderr, "Failed to URL-encode city or country.\n");
-        curl_easy_cleanup(curl_handle);
-        free(chunk.memory);
-        curl_global_cleanup();
-        return pt;
+        if (!encoded_city || !encoded_country) {
+            fprintf(stderr, "Failed to URL-encode city or country.\n");
+            curl_easy_cleanup(curl_handle);
+            free(chunk.memory);
+            curl_global_cleanup();
+            return pt;
+        }
+
+        snprintf(url, sizeof(url), "https://api.aladhan.com/v1/timingsByCity/%02d-%02d-%d?city=%s&country=%s&method=%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, encoded_city, encoded_country, method);
+        curl_free(encoded_city);
+        curl_free(encoded_country);
+    } else {
+        double lat, lon;
+        if (get_location_by_ip(&lat, &lon)) {
+            snprintf(url, sizeof(url), "https://api.aladhan.com/v1/timings/%02d-%02d-%d?latitude=%f&longitude=%f&method=%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, lat, lon, method);
+        } else {
+            log_message("ERROR", "Failed to get location by IP.");
+            curl_easy_cleanup(curl_handle);
+            free(chunk.memory);
+            curl_global_cleanup();
+            return pt;
+        }
     }
 
-    snprintf(url, sizeof(url), "https://api.aladhan.com/v1/timingsByCity/%02d-%02d-%d?city=%s&country=%s&method=%d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, encoded_city, encoded_country, method);
-
-    char log_buf[512];
+    char log_buf[600];
     snprintf(log_buf, sizeof(log_buf), "Requesting prayer times: %s", url);
     log_message("REQUEST", log_buf);
-
-    curl_free(encoded_city);
-    curl_free(encoded_country);
 
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
     curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L);

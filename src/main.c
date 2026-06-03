@@ -69,8 +69,8 @@ int main() {
 
         switch (choice) {
             case 1:
-                printf("Fetching and displaying prayer times (console)...\n");
-                PrayerTimes console_pt = fetch_prayer_times("London", "United Kingdom", 2);
+                printf("Fetching and displaying prayer times for your location (console)...\n");
+                PrayerTimes console_pt = fetch_prayer_times(NULL, NULL, 2);
                 printf("Fajr: %s\n", console_pt.fajr);
                 printf("Sunrise: %s\n", console_pt.sunrise);
                 printf("Dhuhr: %s\n", console_pt.dhuhr);
@@ -80,7 +80,7 @@ int main() {
                 break;
             case 2:
                 printf("Launching graphical prayer time display... (This will only work on your local machine with SDL2 installed)\n");
-                PrayerTimes graphical_pt = fetch_prayer_times("London", "United Kingdom", 2);
+                PrayerTimes graphical_pt = fetch_prayer_times(NULL, NULL, 2);
                 displayGraphicalPrayerTimesLocal(graphical_pt);
                 printf("Graphical display closed. Press Enter to continue to main menu.\n");
                 getchar(); // Wait for user to press Enter

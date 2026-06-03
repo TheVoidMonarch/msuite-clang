@@ -11,6 +11,7 @@ typedef struct {
 } PrayerTimes;
 
 // Function to fetch and parse prayer times from the API
+// If city and country are NULL, it will attempt to fetch by IP address
 PrayerTimes fetch_prayer_times(const char *city, const char *country, int method);
 
 #endif // API_HANDLER_H
