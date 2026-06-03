@@ -50,7 +50,8 @@ To compile and run the MasjidSuite project on your local Linux system (or Window
 2.  **Install Dependencies and Compile the Project**: Open your terminal and install the necessary development libraries. These commands are for Debian/Ubuntu-based systems:
 
     ```bash
-   chmod +x INSTALL.sh
+    chmod +x INSTALL.sh
+    ./INSTALL.sh
     ```
 
 3.  **Run the Program**: Execute the compiled program from the project's root directory:
