@@ -8,10 +8,7 @@
 SDL_Window* init_sdl_video(int width, int height) {
     log_message("INFO", "Initializing SDL video...");
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        char err_buf[256];
-        snprintf(err_buf, sizeof(err_buf), "SDL Video could not initialize! SDL_Error: %s", SDL_GetError());
-        log_message("ERROR", err_buf);
-        fprintf(stderr, "%s\n", err_buf);
+        fprintf(stderr, "SDL Video could not initialize! SDL_Error: %s\n", SDL_GetError());
         return NULL;
     }
 
@@ -20,30 +17,22 @@ SDL_Window* init_sdl_video(int width, int height) {
                                           SDL_WINDOWPOS_CENTERED,
                                           width, height,
                                           SDL_WINDOW_SHOWN);
-    if (window == NULL) {
-        char err_buf[256];
-        snprintf(err_buf, sizeof(err_buf), "Window could not be created! SDL_Error: %s", SDL_GetError());
-        log_message("ERROR", err_buf);
-        fprintf(stderr, "%s\n", err_buf);
+    if (!window) {
+        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
         SDL_Quit();
         return NULL;
     }
 
     if (TTF_Init() == -1) {
-        char err_buf[256];
-        snprintf(err_buf, sizeof(err_buf), "SDL_ttf could not initialize! SDL_ttf Error: %s", TTF_GetError());
-        log_message("ERROR", err_buf);
-        fprintf(stderr, "%s\n", err_buf);
+        fprintf(stderr, "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
         SDL_DestroyWindow(window);
         SDL_Quit();
         return NULL;
     }
 
-    if (!(IMG_Init(IMG_INIT_XPM) & IMG_INIT_XPM)) {
-        char err_buf[256];
-        snprintf(err_buf, sizeof(err_buf), "SDL_image could not initialize! SDL_image Error: %s", IMG_GetError());
-        log_message("ERROR", err_buf);
-        fprintf(stderr, "%s\n", err_buf);
+    // Initialize SDL_image (no flags needed for XPM)
+    if (IMG_Init(0) < 0) {
+        fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
         SDL_DestroyWindow(window);
         TTF_Quit();
         SDL_Quit();
@@ -56,17 +45,11 @@ SDL_Window* init_sdl_video(int width, int height) {
 int init_sdl_audio() {
     log_message("INFO", "Initializing SDL audio...");
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-        char err_buf[256];
-        snprintf(err_buf, sizeof(err_buf), "SDL Audio could not initialize! SDL_Error: %s", SDL_GetError());
-        log_message("ERROR", err_buf);
-        fprintf(stderr, "%s\n", err_buf);
+        fprintf(stderr, "SDL Audio could not initialize! SDL_Error: %s\n", SDL_GetError());
         return 0;
     }
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        char err_buf[256];
-        snprintf(err_buf, sizeof(err_buf), "SDL_mixer could not initialize! SDL_mixer Error: %s", Mix_GetError());
-        log_message("ERROR", err_buf);
-        fprintf(stderr, "%s\n", err_buf);
+        fprintf(stderr, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
         SDL_QuitSubSystem(SDL_INIT_AUDIO);
         return 0;
     }
