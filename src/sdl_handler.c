@@ -4,7 +4,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "logger.h"
-#include "api_handler.h"   // <-- this is where PrayerTimes is already defined
+#include "api_handler.h"
 
 // Helper to parse "HH:MM" into a struct tm
 static int parse_time_string(const char* time_str, struct tm* tm_out) {
@@ -53,6 +53,47 @@ SDL_Window* init_sdl_video(int width, int height) {
     return window;
 }
 
+// Audio functions
+int init_sdl_audio() {
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        fprintf(stderr, "SDL Audio could not initialize! SDL_Error: %s\n", SDL_GetError());
+        return 0;
+    }
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        fprintf(stderr, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        return 0;
+    }
+    return 1;
+}
+
+void quit_sdl_audio() {
+    Mix_CloseAudio();
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
+void stop_azan() {
+    Mix_HaltMusic();
+}
+
+void play_azan(const char* audio_path) {
+    static Mix_Music* current_azan = NULL;
+    if (current_azan) {
+        Mix_FreeMusic(current_azan);
+    }
+    current_azan = Mix_LoadMUS(audio_path);
+    if (!current_azan) {
+        fprintf(stderr, "Failed to load azan: %s\n", Mix_GetError());
+        return;
+    }
+    Mix_PlayMusic(current_azan, 1);
+}
+
+int is_azan_playing() {
+    return Mix_PlayingMusic();
+}
+
+// Text rendering
 void render_text(SDL_Renderer* renderer, TTF_Font* font, const char* text,
                  int x, int y, SDL_Color color) {
     if (!font) return;
@@ -67,6 +108,7 @@ void render_text(SDL_Renderer* renderer, TTF_Font* font, const char* text,
     SDL_FreeSurface(textSurface);
 }
 
+// Graphical prayer times
 void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
     SDL_Window* window = init_sdl_video(800, 600);
     if (!window) return;
