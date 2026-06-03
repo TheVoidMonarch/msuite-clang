@@ -4,16 +4,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "logger.h"
-
-// Define PrayerTimes struct here so compiler knows it
-typedef struct {
-    const char* fajr;
-    const char* sunrise;
-    const char* dhuhr;
-    const char* asr;
-    const char* maghrib;
-    const char* isha;
-} PrayerTimes;
+#include "api_handler.h"   // <-- this is where PrayerTimes is already defined
 
 // Helper to parse "HH:MM" into a struct tm
 static int parse_time_string(const char* time_str, struct tm* tm_out) {
