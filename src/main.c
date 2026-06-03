@@ -40,7 +40,6 @@ void displayMainMenu() {
     printf("%sEnter your choice: %s", BOLD, RESET);
 }
 
-}
 
 void displaySysLog() {
     FILE* file = fopen("syslog.txt", "r");
