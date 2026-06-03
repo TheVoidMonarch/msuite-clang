@@ -90,10 +90,10 @@ int main() {
                 printf("Note: Audio playback requires local execution with SDL2_mixer.\n");
                 
                 if (init_sdl_audio()) {
-                    printf("Waiting 30 seconds...\n");
+                    printf("initializing playback...\n");
                     // In a real scenario, we wouldn't block the main thread like this,
                     // but for a simple test, we use SDL_Delay.
-                    SDL_Delay(30000); 
+                    SDL_Delay(500); 
                     
                     printf("Playing Azan...\n");
                     // For test, we play the standard Adhan. You could add logic to choose Fajr.
