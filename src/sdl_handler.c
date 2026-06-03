@@ -1,8 +1,8 @@
 #include "sdl_handler.h"
 #include <stdio.h>
 #include <string.h>
-#include <time.h> // For time functions
-#include <stdlib.h> // For atoi
+#include <time.h>
+#include <stdlib.h>
 #include "logger.h"
 
 SDL_Window* init_sdl_video(int width, int height) {
@@ -15,7 +15,11 @@ SDL_Window* init_sdl_video(int width, int height) {
         return NULL;
     }
 
-    SDL_Window* window = SDL_CreateWindow("MasjidSuite - Prayer Times", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+    SDL_Window* window = SDL_CreateWindow("MasjidSuite - Prayer Times",
+                                          SDL_WINDOWPOS_CENTERED,
+                                          SDL_WINDOWPOS_CENTERED,
+                                          width, height,
+                                          SDL_WINDOW_SHOWN);
     if (window == NULL) {
         char err_buf[256];
         snprintf(err_buf, sizeof(err_buf), "Window could not be created! SDL_Error: %s", SDL_GetError());
@@ -34,6 +38,18 @@ SDL_Window* init_sdl_video(int width, int height) {
         SDL_Quit();
         return NULL;
     }
+
+    if (!(IMG_Init(IMG_INIT_XPM) & IMG_INIT_XPM)) {
+        char err_buf[256];
+        snprintf(err_buf, sizeof(err_buf), "SDL_image could not initialize! SDL_image Error: %s", IMG_GetError());
+        log_message("ERROR", err_buf);
+        fprintf(stderr, "%s\n", err_buf);
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        SDL_Quit();
+        return NULL;
+    }
+
     return window;
 }
 
@@ -46,13 +62,12 @@ int init_sdl_audio() {
         fprintf(stderr, "%s\n", err_buf);
         return 0;
     }
-    // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         char err_buf[256];
         snprintf(err_buf, sizeof(err_buf), "SDL_mixer could not initialize! SDL_mixer Error: %s", Mix_GetError());
         log_message("ERROR", err_buf);
         fprintf(stderr, "%s\n", err_buf);
-        SDL_Quit();
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
         return 0;
     }
     return 1;
@@ -63,22 +78,18 @@ void quit_sdl_audio() {
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
-void render_text(SDL_Renderer* renderer, TTF_Font* font, const char* text, int x, int y, SDL_Color color) {
-    if (font == NULL) {
-        fprintf(stderr, "Font is NULL in render_text!\n");
-        return;
-    }
+void stop_azan() {
+    log_message("INFO", "Stopping Azan playback...");
+    Mix_HaltMusic();
+}
+
+void render_text(SDL_Renderer* renderer, TTF_Font* font, const char* text,
+                 int x, int y, SDL_Color color) {
+    if (!font) return;
     SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, color);
-    if (textSurface == NULL) {
-        fprintf(stderr, "Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError());
-        return;
-    }
+    if (!textSurface) return;
 
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (textTexture == NULL) {
-        fprintf(stderr, "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
-    }
-
     SDL_Rect renderQuad = {x, y, textSurface->w, textSurface->h};
     SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
 
@@ -88,19 +99,12 @@ void render_text(SDL_Renderer* renderer, TTF_Font* font, const char* text, int x
 
 void play_azan(const char* audio_path) {
     static Mix_Music* current_azan = NULL;
-    char log_buf[256];
-    snprintf(log_buf, sizeof(log_buf), "Playing Azan: %s", audio_path);
-    log_message("INFO", log_buf);
-
-    if (current_azan != NULL) {
+    if (current_azan) {
         Mix_FreeMusic(current_azan);
     }
     current_azan = Mix_LoadMUS(audio_path);
-    if (current_azan == NULL) {
-        char err_buf[256];
-        snprintf(err_buf, sizeof(err_buf), "Failed to load azan music (%s)! SDL_mixer Error: %s", audio_path, Mix_GetError());
-        log_message("ERROR", err_buf);
-        fprintf(stderr, "%s\n", err_buf);
+    if (!current_azan) {
+        fprintf(stderr, "Failed to load azan: %s\n", Mix_GetError());
         return;
     }
     Mix_PlayMusic(current_azan, 1);
@@ -110,149 +114,62 @@ int is_azan_playing() {
     return Mix_PlayingMusic();
 }
 
-static int parse_time_string(const char* time_str, struct tm* tm_out) {
-    int hour, minute;
-    if (sscanf(time_str, "%d:%d", &hour, &minute) == 2) {
-        tm_out->tm_hour = hour;
-        tm_out->tm_min = minute;
-        tm_out->tm_sec = 0;
-        return 1;
-    }
-    return 0;
-}
-
 void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
     SDL_Window* window = init_sdl_video(800, 600);
-    if (window == NULL) {
-        fprintf(stderr, "Failed to initialize SDL window for graphical display.\n");
-        return;
-    }
+    if (!window) return;
+
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == NULL) {
-        fprintf(stderr, "Failed to create SDL renderer! SDL Error: %s\n", SDL_GetError());
-        close_sdl_video(window, NULL, NULL);
+    if (!renderer) {
+        SDL_DestroyWindow(window);
         return;
     }
 
-    TTF_Font* font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24); // Use a default font
-    if (font == NULL) {
-        fprintf(stderr, "Failed to load font! SDL_ttf Error: %s\n", TTF_GetError());
-        close_sdl_video(window, renderer, NULL);
+    // Load border image from assets
+    SDL_Surface* borderSurface = IMG_Load("assets/border.xpm");
+    if (borderSurface) {
+        SDL_Texture* borderTexture = SDL_CreateTextureFromSurface(renderer, borderSurface);
+        SDL_FreeSurface(borderSurface);
+        SDL_RenderCopy(renderer, borderTexture, NULL, NULL);
+        SDL_DestroyTexture(borderTexture);
+    }
+
+    TTF_Font* font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24);
+    if (!font) {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
         return;
     }
 
-    SDL_Color textColor = {255, 255, 255, 255}; // White color
+    SDL_Color textColor = {0, 0, 0, 255}; // black text
+    char buffer[128];
+    int y_offset = 100;
+
+    const char* labels[] = {"Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"};
+    const char* values[] = {pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha};
+
+    for (int i = 0; i < 6; i++) {
+        snprintf(buffer, sizeof(buffer), "%s: %s", labels[i], values[i]);
+        render_text(renderer, font, buffer, 200, y_offset, textColor);
+        y_offset += 50;
+    }
+
+    SDL_RenderPresent(renderer);
 
     SDL_Event e;
     int quit = 0;
     while (!quit) {
-        while (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT) {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT || (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) {
                 quit = 1;
-            } else if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.sym == SDLK_ESCAPE) {
-                    quit = 1; // Allow escape to exit graphical display
-                }
             }
         }
-
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black background
-        SDL_RenderClear(renderer);
-
-        char buffer[100];
-        int y_offset = 50;
-
-        // Display all prayer times
-        sprintf(buffer, "Fajr: %s", pt.fajr);
-        render_text(renderer, font, buffer, 50, y_offset, textColor);
-        y_offset += 50;
-        sprintf(buffer, "Sunrise: %s", pt.sunrise);
-        render_text(renderer, font, buffer, 50, y_offset, textColor);
-        y_offset += 50;
-        sprintf(buffer, "Dhuhr: %s", pt.dhuhr);
-        render_text(renderer, font, buffer, 50, y_offset, textColor);
-        y_offset += 50;
-        sprintf(buffer, "Asr: %s", pt.asr);
-        render_text(renderer, font, buffer, 50, y_offset, textColor);
-        y_offset += 50;
-        sprintf(buffer, "Maghrib: %s", pt.maghrib);
-        render_text(renderer, font, buffer, 50, y_offset, textColor);
-        y_offset += 50;
-        sprintf(buffer, "Isha: %s", pt.isha);
-        render_text(renderer, font, buffer, 50, y_offset, textColor);
-        y_offset += 50;
-
-        // Countdown logic
-        time_t rawtime;
-        struct tm *info;
-        time(&rawtime);
-        info = localtime(&rawtime);
-
-        const char* prayer_names[] = {"Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"};
-        const char* prayer_times_str[] = {pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha};
-
-        time_t current_time_sec = mktime(info);
-        time_t next_prayer_time_sec = 0;
-        const char* next_prayer_name = "N/A";
-
-        for (int i = 0; i < 6; ++i) {
-            struct tm prayer_tm = *info; // Copy current date/year/month
-            if (parse_time_string(prayer_times_str[i], &prayer_tm)) {
-                time_t prayer_sec = mktime(&prayer_tm);
-                if (prayer_sec > current_time_sec) {
-                    next_prayer_time_sec = prayer_sec;
-                    next_prayer_name = prayer_names[i];
-                    break;
-                }
-            }
-        }
-
-        // If no prayer found for today, check for tomorrow's Fajr
-        if (next_prayer_time_sec == 0) {
-            struct tm tomorrow_info = *info;
-            tomorrow_info.tm_mday += 1; // Advance to next day
-            mktime(&tomorrow_info); // Normalize tm_mday, tm_mon, tm_year
-
-            struct tm fajr_tomorrow_tm = tomorrow_info;
-            if (parse_time_string(pt.fajr, &fajr_tomorrow_tm)) {
-                next_prayer_time_sec = mktime(&fajr_tomorrow_tm);
-                next_prayer_name = "Fajr (Tomorrow)";
-            }
-        }
-
-        if (next_prayer_time_sec != 0) {
-            double diff_sec = difftime(next_prayer_time_sec, current_time_sec);
-            int hours = (int)(diff_sec / 3600);
-            int minutes = (int)((diff_sec - (hours * 3600)) / 60);
-            int seconds = (int)(diff_sec - (hours * 3600) - (minutes * 60));
-
-            sprintf(buffer, "Next Prayer: %s", next_prayer_name);
-            render_text(renderer, font, buffer, 50, y_offset + 50, textColor);
-            sprintf(buffer, "Countdown: %02d:%02d:%02d", hours, minutes, seconds);
-            render_text(renderer, font, buffer, 50, y_offset + 100, textColor);
-        } else {
-            sprintf(buffer, "Next Prayer: N/A");
-            render_text(renderer, font, buffer, 50, y_offset + 50, textColor);
-            sprintf(buffer, "Countdown: --:--:--");
-            render_text(renderer, font, buffer, 50, y_offset + 100, textColor);
-        }
-
-        SDL_RenderPresent(renderer);
+        SDL_Delay(50);
     }
 
-    close_sdl_video(window, renderer, font);
-}
-
-void close_sdl_video(SDL_Window* window, SDL_Renderer* renderer, TTF_Font* font) {
-    if (font != NULL) {
-        TTF_CloseFont(font);
-    }
-    if (renderer != NULL) {
-        SDL_DestroyRenderer(renderer);
-    }
-    if (window != NULL) {
-        SDL_DestroyWindow(window);
-    }
+    TTF_CloseFont(font);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    IMG_Quit();
     TTF_Quit();
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
