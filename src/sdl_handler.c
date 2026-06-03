@@ -193,11 +193,11 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
             snprintf(buffer, sizeof(buffer), "Next Prayer : %s ( %02d:%02d:%02d left )",
                      next_prayer_name, hours, minutes, seconds);
             
-            render_text(renderer, nextFont, buffer, 90, 60, textColor);
+            render_text(renderer, nextFont, buffer, 10, 75, textColor);
         }
 
         
-        int startX = 253;
+        int startX = 260;
         int startY = 150;
         int spacing = 40;
 
