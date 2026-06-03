@@ -57,7 +57,7 @@ To compile and run the MasjidSuite project on your local Linux system (or Window
 3.  **Compile the Project**: Navigate to the project's root directory (where `src/` and `assets/` are located) and compile the source files using `gcc`. Ensure all `.c` files are included and the libraries are linked correctly, specifying the `src` directory for includes:
 
     ```bash
-    gcc -o masjidsuite src/main.c src/api_handler.c src/sdl_handler.c -Isrc -lcurl -lcjson -lSDL2 -lSDL2_ttf -lSDL2_mixer -I/usr/include/cjson
+    gcc -o masjidsuite src/main.c src/api_handler.c src/sdl_handler.c src/logger.c -Isrc -lcurl -lcjson -lSDL2 -lSDL2_ttf -lSDL2_mixer -I/usr/include/cjson
     ```
 
 4.  **Run the Program**: Execute the compiled program from the project's root directory:
