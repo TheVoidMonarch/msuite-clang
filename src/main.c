@@ -17,9 +17,6 @@
 #define BOLD    "\033[1m"
 #define RESET   "\033[0m"
 
-// Forward declaration
-void displayGraphicalPrayerTimesLocal(PrayerTimes pt);
-
 // Signal handler for Ctrl+C
 void handle_sigint(int sig) {
     printf("\nCTRL+C pressed — stopping Azan playback...\n");
@@ -29,16 +26,13 @@ void handle_sigint(int sig) {
 }
 
 void displayMainMenu() {
-    // Title in bold cyan, larger spacing
     printf("\n%s%s==============================%s\n", BOLD, CYAN, RESET);
     printf("%s%s     MASJIDSUITE MAIN MENU        %s\n", BOLD, CYAN, RESET);
     printf("%s%s==============================%s\n", BOLD, CYAN, RESET);
 
-    // Subtitle in yellow, slightly smaller
     printf("%s-Basics of Programming Mini Project-%s\n", YELLOW, RESET);
     printf("%s  Group A7X: Haziq, Imran, Zuan%s\n\n", YELLOW, RESET);
 
-    // Menu options with different colors
     printf("%s1.%s View Prayer Times (Console)\n", RESET, CYAN);
     printf("%s2.%s View Prayer Times (Graphical - Local Only)\n", RESET, YELLOW);
     printf("%s3.%s Test Azan\n", RESET, BLUE);
@@ -98,7 +92,8 @@ int main() {
         switch (choice) {
             case 1:
                 printf("Fetching and displaying prayer times for your location (console)...\n");
-                PrayerTimes console_pt = fetch_prayer_times(NULL, NULL, 2);
+                // ✅ Use method 17 here
+                PrayerTimes console_pt = fetch_prayer_times(NULL, NULL, 17);
                 printf("Fajr: %s\n", console_pt.fajr);
                 printf("Sunrise: %s\n", console_pt.sunrise);
                 printf("Dhuhr: %s\n", console_pt.dhuhr);
@@ -108,7 +103,8 @@ int main() {
                 break;
             case 2:
                 printf("Launching graphical prayer time display...\n");
-                PrayerTimes graphical_pt = fetch_prayer_times(NULL, NULL, 2);
+                // ✅ Use method 17 here
+                PrayerTimes graphical_pt = fetch_prayer_times(NULL, NULL, 17);
                 displayGraphicalPrayerTimesLocal(graphical_pt);
                 break;
             case 3:
