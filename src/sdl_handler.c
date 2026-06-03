@@ -130,13 +130,17 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
     const char* labels[] = {"Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"};
     const char* values[] = {pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha};
 
-    for (int i = 0; i < 6; i++) {
-        snprintf(buffer, sizeof(buffer), "%s: %s", labels[i], values[i]);
-        render_text(renderer, font, buffer, 200, y_offset, textColor);
-        y_offset += 50;
-    }
-
-    SDL_RenderPresent(renderer);
+    // Helper to parse "HH:MM"
+    auto parse_time_string = [](const char* time_str, struct tm* tm_out) {
+        int hour, minute;
+        if (sscanf(time_str, "%d:%d", &hour, &minute) == 2) {
+            tm_out->tm_hour = hour;
+            tm_out->tm_min = minute;
+            tm_out->tm_sec = 0;
+            return 1;
+        }
+        return 0;
+    };
 
     SDL_Event e;
     int quit = 0;
@@ -146,7 +150,72 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
                 quit = 1;
             }
         }
-        SDL_Delay(50);
+
+        // Clear and redraw background
+        SDL_RenderClear(renderer);
+        SDL_Surface* borderSurface = IMG_Load("assets/border.xpm");
+        if (borderSurface) {
+            SDL_Texture* borderTexture = SDL_CreateTextureFromSurface(renderer, borderSurface);
+            SDL_FreeSurface(borderSurface);
+            SDL_RenderCopy(renderer, borderTexture, NULL, NULL);
+            SDL_DestroyTexture(borderTexture);
+        }
+
+        // Draw prayer times
+        y_offset = 100;
+        for (int i = 0; i < 6; i++) {
+            snprintf(buffer, sizeof(buffer), "%s: %s", labels[i], values[i]);
+            render_text(renderer, font, buffer, 200, y_offset, textColor);
+            y_offset += 50;
+        }
+
+        // Countdown logic
+        time_t rawtime;
+        struct tm *info;
+        time(&rawtime);
+        info = localtime(&rawtime);
+
+        time_t current_time_sec = mktime(info);
+        time_t next_prayer_time_sec = 0;
+        const char* next_prayer_name = "N/A";
+
+        for (int i = 0; i < 6; ++i) {
+            struct tm prayer_tm = *info;
+            if (parse_time_string(values[i], &prayer_tm)) {
+                time_t prayer_sec = mktime(&prayer_tm);
+                if (prayer_sec > current_time_sec) {
+                    next_prayer_time_sec = prayer_sec;
+                    next_prayer_name = labels[i];
+                    break;
+                }
+            }
+        }
+
+        if (next_prayer_time_sec == 0) {
+            struct tm tomorrow_info = *info;
+            tomorrow_info.tm_mday += 1;
+            mktime(&tomorrow_info);
+            struct tm fajr_tomorrow_tm = tomorrow_info;
+            if (parse_time_string(pt.fajr, &fajr_tomorrow_tm)) {
+                next_prayer_time_sec = mktime(&fajr_tomorrow_tm);
+                next_prayer_name = "Fajr (Tomorrow)";
+            }
+        }
+
+        if (next_prayer_time_sec != 0) {
+            double diff_sec = difftime(next_prayer_time_sec, current_time_sec);
+            int hours = (int)(diff_sec / 3600);
+            int minutes = (int)((diff_sec - hours * 3600) / 60);
+            int seconds = (int)(diff_sec - hours * 3600 - minutes * 60);
+
+            snprintf(buffer, sizeof(buffer), "Next Prayer: %s", next_prayer_name);
+            render_text(renderer, font, buffer, 200, y_offset + 50, textColor);
+            snprintf(buffer, sizeof(buffer), "Countdown: %02d:%02d:%02d", hours, minutes, seconds);
+            render_text(renderer, font, buffer, 200, y_offset + 100, textColor);
+        }
+
+        SDL_RenderPresent(renderer);
+        SDL_Delay(1000); // update every second
     }
 
     TTF_CloseFont(font);
