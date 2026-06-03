@@ -5,6 +5,18 @@
 #include <stdlib.h>
 #include "logger.h"
 
+// Helper to parse "HH:MM" into a struct tm
+static int parse_time_string(const char* time_str, struct tm* tm_out) {
+    int hour, minute;
+    if (sscanf(time_str, "%d:%d", &hour, &minute) == 2) {
+        tm_out->tm_hour = hour;
+        tm_out->tm_min = minute;
+        tm_out->tm_sec = 0;
+        return 1;
+    }
+    return 0;
+}
+
 SDL_Window* init_sdl_video(int width, int height) {
     log_message("INFO", "Initializing SDL video...");
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -30,7 +42,6 @@ SDL_Window* init_sdl_video(int width, int height) {
         return NULL;
     }
 
-    // Initialize SDL_image (no flags needed for XPM)
     if (IMG_Init(0) < 0) {
         fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
         SDL_DestroyWindow(window);
@@ -107,15 +118,6 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
         return;
     }
 
-    // Load border image from assets
-    SDL_Surface* borderSurface = IMG_Load("assets/border.xpm");
-    if (borderSurface) {
-        SDL_Texture* borderTexture = SDL_CreateTextureFromSurface(renderer, borderSurface);
-        SDL_FreeSurface(borderSurface);
-        SDL_RenderCopy(renderer, borderTexture, NULL, NULL);
-        SDL_DestroyTexture(borderTexture);
-    }
-
     TTF_Font* font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24);
     if (!font) {
         SDL_DestroyRenderer(renderer);
@@ -125,22 +127,9 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
 
     SDL_Color textColor = {0, 0, 0, 255}; // black text
     char buffer[128];
-    int y_offset = 100;
 
     const char* labels[] = {"Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"};
     const char* values[] = {pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha};
-
-    // Helper to parse "HH:MM"
-    auto parse_time_string = [](const char* time_str, struct tm* tm_out) {
-        int hour, minute;
-        if (sscanf(time_str, "%d:%d", &hour, &minute) == 2) {
-            tm_out->tm_hour = hour;
-            tm_out->tm_min = minute;
-            tm_out->tm_sec = 0;
-            return 1;
-        }
-        return 0;
-    };
 
     SDL_Event e;
     int quit = 0;
@@ -162,7 +151,7 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
         }
 
         // Draw prayer times
-        y_offset = 100;
+        int y_offset = 100;
         for (int i = 0; i < 6; i++) {
             snprintf(buffer, sizeof(buffer), "%s: %s", labels[i], values[i]);
             render_text(renderer, font, buffer, 200, y_offset, textColor);
