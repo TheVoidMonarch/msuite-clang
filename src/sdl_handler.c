@@ -118,7 +118,7 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
         return;
     }
 
-    TTF_Font* font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24);
+    TTF_Font* font = TTF_OpenFont("assets/YourFont.ttf", 28); // use your chosen font
     if (!font) {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -148,14 +148,6 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
             SDL_FreeSurface(borderSurface);
             SDL_RenderCopy(renderer, borderTexture, NULL, NULL);
             SDL_DestroyTexture(borderTexture);
-        }
-
-        // Draw prayer times
-        int y_offset = 100;
-        for (int i = 0; i < 6; i++) {
-            snprintf(buffer, sizeof(buffer), "%s: %s", labels[i], values[i]);
-            render_text(renderer, font, buffer, 200, y_offset, textColor);
-            y_offset += 50;
         }
 
         // Countdown logic
@@ -197,10 +189,19 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
             int minutes = (int)((diff_sec - hours * 3600) / 60);
             int seconds = (int)(diff_sec - hours * 3600 - minutes * 60);
 
-            snprintf(buffer, sizeof(buffer), "Next Prayer: %s", next_prayer_name);
-            render_text(renderer, font, buffer, 200, y_offset + 50, textColor);
-            snprintf(buffer, sizeof(buffer), "Countdown: %02d:%02d:%02d", hours, minutes, seconds);
-            render_text(renderer, font, buffer, 200, y_offset + 100, textColor);
+            snprintf(buffer, sizeof(buffer), "Next Prayer : %s ( %02d:%02d:%02d left )",
+                     next_prayer_name, hours, minutes, seconds);
+            render_text(renderer, font, buffer, 200, 50, textColor);
+        }
+
+        // Draw prayer times shifted right
+        int startX = 260;   // shifted ~60px right
+        int startY = 150;   // below countdown
+        int spacing = 50;
+
+        for (int i = 0; i < 6; i++) {
+            snprintf(buffer, sizeof(buffer), "%-8s\t%s", labels[i], values[i]);
+            render_text(renderer, font, buffer, startX, startY + i * spacing, textColor);
         }
 
         SDL_RenderPresent(renderer);
