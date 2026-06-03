@@ -198,7 +198,7 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
             // Fixed position for Next Prayer line (not centered)
             snprintf(buffer, sizeof(buffer), "Next Prayer : %s ( %02d:%02d:%02d left )",
                      next_prayer_name, hours, minutes, seconds);
-            render_text(renderer, nextFont, buffer, 10, 75, textColor);
+            render_text(renderer, nextFont, buffer, 10, 85, textColor);
         }
 
         // Prayer list auto-centered
