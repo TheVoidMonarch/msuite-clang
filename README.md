@@ -74,7 +74,11 @@ The graphical display and audio playback features (using SDL2, SDL2_ttf, and SDL
 
 ## References
 [1] [libcurl - C library for client-side URL transfers](https://curl.se/libcurl/)
+
 [2] [cJSON - Ultralightweight JSON parser in ANSI C](https://github.com/DaveGamble/cJSON)
+
 [3] [SDL2 - Simple DirectMedia Layer](https://www.libsdl.org/)
+
 [4] [SDL_ttf - TrueType Font Rendering Library for SDL](https://www.libsdl.org/projects/SDL_ttf/)
+
 [5] [SDL_mixer - Audio Mixer Library for SDL](https://www.libsdl.org/projects/SDL_mixer/)
