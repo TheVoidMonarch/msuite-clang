@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include "api_handler.h"
 #include <SDL2/SDL.h>
 #include "sdl_handler.h"
@@ -18,6 +19,14 @@
 
 // Forward declaration
 void displayGraphicalPrayerTimesLocal(PrayerTimes pt);
+
+// Signal handler for Ctrl+C
+void handle_sigint(int sig) {
+    printf("\nCTRL+C pressed — stopping Azan playback...\n");
+    stop_azan();
+    quit_sdl_audio();
+    // Do not exit program, just stop audio and return to menu
+}
 
 void displayMainMenu() {
     // Title in bold cyan, larger spacing
@@ -39,7 +48,6 @@ void displayMainMenu() {
 
     printf("%sEnter your choice: %s", BOLD, RESET);
 }
-
 
 void displaySysLog() {
     FILE* file = fopen("syslog.txt", "r");
@@ -71,12 +79,12 @@ int main() {
     int adminChoice;
     char input_buffer[10]; // Buffer for user input
 
+    signal(SIGINT, handle_sigint);   // register Ctrl+C handler
     log_message("USAGE", "Program started");
 
     do {
         displayMainMenu();
         if (fgets(input_buffer, sizeof(input_buffer), stdin) != NULL) {
-            // Remove trailing newline character if present
             input_buffer[strcspn(input_buffer, "\n")] = 0;
             choice = atoi(input_buffer);
             char log_buf[256];
@@ -99,31 +107,17 @@ int main() {
                 printf("Isha: %s\n", console_pt.isha);
                 break;
             case 2:
-                printf("Launching graphical prayer time display... (This will only work on your local machine with SDL2 installed)\n");
+                printf("Launching graphical prayer time display...\n");
                 PrayerTimes graphical_pt = fetch_prayer_times(NULL, NULL, 2);
                 displayGraphicalPrayerTimesLocal(graphical_pt);
-                printf("Graphical display closed. Press Enter to continue to main menu.\n");
-                getchar(); // Wait for user to press Enter
                 break;
             case 3:
-                printf("Testing Azan playback (simulating a prayer call in 30 seconds)...\n");
-                printf("Note: Audio playback requires local execution with SDL2_mixer.\n");
-                
+                printf("Testing Azan playback (press Ctrl+C to stop)...\n");
                 if (init_sdl_audio()) {
-                    printf("initializing playback...\n");
-                   
-                    // but for a simple test, we use SDL_Delay.
-                    SDL_Delay(500); 
-                    
-                    printf("Playing Azan...\n");
-                   
                     play_azan("assets/Adhan.mp3");
-                    
-                    // Wait for the audio to finish playing
                     while (is_azan_playing()) {
                         SDL_Delay(100);
                     }
-                    printf("Azan playback finished.\n");
                     quit_sdl_audio();
                 } else {
                     printf("Failed to initialize audio system.\n");
@@ -133,7 +127,6 @@ int main() {
                 do {
                     displayAdminMenu();
                     if (fgets(input_buffer, sizeof(input_buffer), stdin) != NULL) {
-                        // Remove trailing newline character if present
                         input_buffer[strcspn(input_buffer, "\n")] = 0;
                         adminChoice = atoi(input_buffer);
                     } else {
@@ -141,21 +134,10 @@ int main() {
                     }
 
                     switch (adminChoice) {
-                        case 1:
-                            printf("Configuring prayer times...\n");
-                            // TODO: Implement configuration logic
-                            break;
-                        case 2:
-                            printf("Managing Qariyah Database...\n");
-                            // TODO: Implement Qariyah database management
-                            break;
-                        case 3:
-                            printf("Backup/Restore Data...\n");
-                            // TODO: Implement backup/restore logic
-                            break;
-                        case 4:
-                            printf("Returning to Main Menu...\n");
-                            break;
+                        case 1: printf("Configuring prayer times...\n"); break;
+                        case 2: printf("Managing Qariyah Database...\n"); break;
+                        case 3: printf("Backup/Restore Data...\n"); break;
+                        case 4: printf("Returning to Main Menu...\n"); break;
                         default:
                             printf("Invalid choice. Please try again.\n");
                             log_message("WARNING", "Invalid admin menu choice entered");
