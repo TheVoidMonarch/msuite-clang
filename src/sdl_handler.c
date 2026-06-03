@@ -1,3 +1,81 @@
+#include "sdl_handler.h"
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <stdlib.h>
+#include "logger.h"
+
+// Define PrayerTimes struct here so compiler knows it
+typedef struct {
+    const char* fajr;
+    const char* sunrise;
+    const char* dhuhr;
+    const char* asr;
+    const char* maghrib;
+    const char* isha;
+} PrayerTimes;
+
+// Helper to parse "HH:MM" into a struct tm
+static int parse_time_string(const char* time_str, struct tm* tm_out) {
+    int hour, minute;
+    if (sscanf(time_str, "%d:%d", &hour, &minute) == 2) {
+        tm_out->tm_hour = hour;
+        tm_out->tm_min = minute;
+        tm_out->tm_sec = 0;
+        return 1;
+    }
+    return 0;
+}
+
+SDL_Window* init_sdl_video(int width, int height) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        fprintf(stderr, "SDL Video could not initialize! SDL_Error: %s\n", SDL_GetError());
+        return NULL;
+    }
+
+    SDL_Window* window = SDL_CreateWindow("MasjidSuite - Prayer Times",
+                                          SDL_WINDOWPOS_CENTERED,
+                                          SDL_WINDOWPOS_CENTERED,
+                                          width, height,
+                                          SDL_WINDOW_SHOWN);
+    if (!window) {
+        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return NULL;
+    }
+
+    if (TTF_Init() == -1) {
+        fprintf(stderr, "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return NULL;
+    }
+
+    if (IMG_Init(0) < 0) {
+        fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        SDL_Quit();
+        return NULL;
+    }
+
+    return window;
+}
+
+void render_text(SDL_Renderer* renderer, TTF_Font* font, const char* text,
+                 int x, int y, SDL_Color color) {
+    if (!font) return;
+    SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, color);
+    if (!textSurface) return;
+
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    SDL_Rect renderQuad = {x, y, textSurface->w, textSurface->h};
+    SDL_RenderCopy(renderer, textTexture, NULL, &renderQuad);
+
+    SDL_DestroyTexture(textTexture);
+    SDL_FreeSurface(textSurface);
+}
+
 void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
     SDL_Window* window = init_sdl_video(800, 600);
     if (!window) return;
@@ -8,9 +86,8 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
         return;
     }
 
-    // Custom font for Next Prayer
+    // Fonts: decorative for Next Prayer, standard for list
     TTF_Font* nextFont = TTF_OpenFont("assets/Basmala.ttf", 32);
-    // Standard font for prayer list
     TTF_Font* listFont = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28);
 
     if (!nextFont || !listFont) {
@@ -90,14 +167,19 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
             render_text(renderer, nextFont, buffer, 170, 75, textColor);
         }
 
-        // Prayer list with standard font
-        int startX = 253; // shifted 7px left
+        // Prayer list auto-centered
         int startY = 170;
         int spacing = 40;
 
         for (int i = 0; i < 6; i++) {
             snprintf(buffer, sizeof(buffer), "%-8s %s", labels[i], values[i]);
-            render_text(renderer, listFont, buffer, startX, startY + i * spacing, textColor);
+            SDL_Surface* tempSurface = TTF_RenderText_Solid(listFont, buffer, textColor);
+            if (tempSurface) {
+                int textWidth = tempSurface->w;
+                SDL_FreeSurface(tempSurface);
+                int xCentered = (800 - textWidth) / 2; // center in 800px window
+                render_text(renderer, listFont, buffer, xCentered, startY + i * spacing, textColor);
+            }
         }
 
         SDL_RenderPresent(renderer);
