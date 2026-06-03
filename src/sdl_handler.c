@@ -117,7 +117,7 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
 
     // Load custom fonts
     TTF_Font* nextFont = TTF_OpenFont("assets/Basmala.ttf", 32); // Next Prayer
-    TTF_Font* listFont = TTF_OpenFont("assets/Bahlul.ttf", 24);  // Prayer list
+    TTF_Font* listFont = TTF_OpenFont("assets/Bahlul.ttf", 32);  // Prayer list
     if (!nextFont || !listFont) {
         fprintf(stderr, "Failed to load custom fonts!\n");
         SDL_DestroyRenderer(renderer);
@@ -192,12 +192,12 @@ void displayGraphicalPrayerTimesLocal(PrayerTimes pt) {
 
             snprintf(buffer, sizeof(buffer), "Next Prayer : %s ( %02d:%02d:%02d left )",
                      next_prayer_name, hours, minutes, seconds);
-            // Shifted 30px left from previous (200 → 170)
-            render_text(renderer, nextFont, buffer, 170, 50, textColor);
+            
+            render_text(renderer, nextFont, buffer, 120, 40, textColor);
         }
 
-        // Prayer list shifted 7px left (260 → 253)
-        int startX = 253;
+        
+        int startX = 250;
         int startY = 150;
         int spacing = 50;
 
